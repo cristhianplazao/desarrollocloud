@@ -35,8 +35,11 @@
           <div class="container-fluid h-100 w-100">
                <div class="h-100 row no-gutters justify-content-center d-flex align-items-center">
                     <div class="col-md-3">
-                         <form action="" class="form-group">
-                              <div class="col-md-12">
+                         <form method="POST" class="form-group">
+                              {% csrf_token %}
+                              {{ form }}
+                              <button type="submit" class="btn btn-success w-100">Login</button> 
+                              <!--<div class="col-md-12">
                                    <div class="row no-gutters pt-1 pb-1">
                                         <input class="w-100" type="text" name="username" id="username" placeholder="Enter your username">
                                    </div>
@@ -55,7 +58,7 @@
                                              </div>
                                         </div>
                                    </div>                                        
-                              </div>
+                              </div>-->
                          </form>
                     </div>
                     

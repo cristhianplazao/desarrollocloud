@@ -15,13 +15,15 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.views import APIView
+from rest_framework import status
 
-
-class EventsViewSet(viewsets.ModelViewSet):
-    permission_clasess = (IsAuthenticated,)
-    
+class EventsViewSet(viewsets.ModelViewSet):    
     queryset = Events.objects.all().order_by('event_initial_date')
     serializer_class = EventsSerializer    
+    permission_classes = (IsAuthenticated,)
+    authentication_class = (TokenAuthentication,)
         
 
 class UserCreate(viewsets.ModelViewSet):
@@ -32,7 +34,7 @@ class UserCreate(viewsets.ModelViewSet):
 class Login(FormView):
     template_name = "login.html"
     form_class = AuthenticationForm
-    success_url = reverse_lazy('api:events')
+    success_url = reverse_lazy('api:events-list')
 
     @method_decorator(csrf_protect)
     @method_decorator(never_cache)
@@ -47,5 +49,12 @@ class Login(FormView):
         if token:
             login(self.request, form.get_user())
             return super(Login,self).form_valid(form)
+
+class Logout(APIView):
+    def get(self,request, format=None):
+        request.user.auth_token.delete()
+        logout(request)
+        return Response(status = status.HTTP_200_OK)
+
 
 
