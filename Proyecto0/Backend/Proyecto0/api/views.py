@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from rest_framework import viewsets
 from .serializers import EventsSerializer, UserSerializer
 from .models import Events
@@ -9,7 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views.generic.edit import FormView
 from django.contrib.auth import login, logout, authenticate
 from django.http import HttpResponseRedirect
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
@@ -18,23 +18,44 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.views import APIView
 from rest_framework import status
+from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
+from django.views.generic import ListView
+from rest_framework.decorators import action
 
-class EventsViewSet(viewsets.ModelViewSet):    
-    queryset = Events.objects.all().order_by('event_initial_date')
-    serializer_class = EventsSerializer    
+class EventsViewSet(viewsets.ModelViewSet):   
+    serializer_class = EventsSerializer
     permission_classes = (IsAuthenticated,)
     authentication_class = (TokenAuthentication,)
+    queryset = Events.objects.all().order_by('event_initial_date').values_list()
+
+    def create(self, request,*args,**kwargs):
+        response = super(EventsViewSet, self).create(request, *args, **kwargs)
+        return HttpResponseRedirect(redirect_to="http://localhost:8080/api/events-all/")
+
+class EventsList(ListView):  
+    
+    def get(self,request,*args,**kwargs):    
+        if not request.user.is_authenticated:
+            return redirect("login")
+        else:
+            print(EventsViewSet.queryset)
+            contexto = {"events" : list(EventsViewSet.queryset)}
+            return render(request,"events.html", contexto)  
         
 
 class UserCreate(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (AllowAny,)
+    
+    template_name = "login.html"
+    form_class = UserCreationForm
+    #success_url = reverse_lazy("api:events-list")
 
 class Login(FormView):
     template_name = "login.html"
     form_class = AuthenticationForm
-    success_url = reverse_lazy('api:events-list')
+    success_url = reverse_lazy('api:events-all')
 
     @method_decorator(csrf_protect)
     @method_decorator(never_cache)
@@ -55,6 +76,5 @@ class Logout(APIView):
         request.user.auth_token.delete()
         logout(request)
         return Response(status = status.HTTP_200_OK)
-
 
 
