@@ -14,8 +14,17 @@
     </head>
     <body>
         <div class="container-fluid p-5 border">
-            <div class="row no-gutters" style="font-size:1.5em" >
-                Lista de Eventos
+            <div class="row no-gutters">
+                <div class="col-md-7" style="font-size:1.5em">
+                    Lista de Eventos
+                </div>
+                <div class="col-md-2 text-right">
+                    <a href="http://localhost:8080/logout">Cierra Sesión</a>
+                </div>
+                <div class="col-md-3 text-right">
+                    Bienvenido {{ username }}
+                </div>
+                
             </div>
         </div>
         <div class="container-fluid">             
@@ -30,6 +39,7 @@
                         <th>Fecha Fin</th>
                         <th>Tipo de Evento</th>
                         <th>Imagen</th>
+                        <th>Acción</th>
                     </tr>
                 {% for event in events %}
                     <tr style="font-size:0.8em">                
@@ -41,6 +51,12 @@
                         <td>{{ event.6 }}</td>
                         <td>{{ event.7 }}</td>
                         <td>{{ event.8 }}</td>
+                        <td>
+                            <form method="POST" action="http://localhost:8080/api/events-all/">
+                                {% csrf_token %}
+                                <button class="btn btn-danger" type="submit" name="delete" value="{{ event.0 }}">Eliminar</button>
+                            </form>
+                        </td>
                     </tr>
                 {% endfor %}
     
@@ -57,7 +73,7 @@
                             <input class="col-md-12 m-1" type="text" name="event_place" placeholder="Enter the place of the event" required>
                             <input class="col-md-12 m-1" type="text" name="event_address" placeholder="Enter the web address" required>
                         </div>
-                        <div class="col-md-6 p-5">
+                        <div class="col-md-6 p-4">
                             <input class="col-md-12 m-1" type="text" name="event_initial_date" placeholder="Initial Date (2018-04-02T04:30Z)" required>
                             <input class="col-md-12 m-1" type="text" name="event_final_date" placeholder="Final Date (2018-04-02T04:30Z)" required>
                             <input class="col-md-12 m-1" type="text" name="event_type" placeholder="Type of event (VIRTUAL/PRESENCIAL)" required>
@@ -67,13 +83,11 @@
                     <div class="row no-gutters">
                         <div class="col-md-12 auto text-center">
                             <button type="submit" class="btn btn-primary">Registrar Evento</button>
-                        </div>
-                        
+                        </div>                        
                     </div>
                </form>
             </div>   
         </div>
-
         
         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>

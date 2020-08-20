@@ -13,33 +13,51 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
-from rest_framework import generics
+#from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.views import APIView
-from rest_framework import status
+#from rest_framework import status
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from django.views.generic import ListView
-from rest_framework.decorators import action
 
 class EventsViewSet(viewsets.ModelViewSet):   
     serializer_class = EventsSerializer
-    permission_classes = (IsAuthenticated,)
+    #permission_classes = (IsAuthenticated,)
     authentication_class = (TokenAuthentication,)
-    queryset = Events.objects.all().order_by('event_initial_date').values_list()
-
+    queryset = Events.objects.all().order_by('event_initial_date')
+   
+    
+    def delete(self, event_id):
+        Events.objects.filter(event_id=event_id).delete()
+    
+    @method_decorator(never_cache)
     def create(self, request,*args,**kwargs):
         response = super(EventsViewSet, self).create(request, *args, **kwargs)
         return HttpResponseRedirect(redirect_to="http://localhost:8080/api/events-all/")
 
 class EventsList(ListView):  
+    http_method_names = [u"post",u"get"]
     
+    @method_decorator(never_cache)
+    def post(self, request, *args, **kwargs):
+        value = request.POST.get("delete")
+        EventsViewSet.delete(EventsViewSet,value)
+        contexto = {
+            "events" : list(EventsViewSet.queryset),
+            "username" : request.user.username
+        }
+        return render(request,"events.html", contexto)
+
+    @method_decorator(never_cache)
     def get(self,request,*args,**kwargs):    
         if not request.user.is_authenticated:
             return redirect("login")
-        else:
-            print(EventsViewSet.queryset)
-            contexto = {"events" : list(EventsViewSet.queryset)}
+        else:       
+            contexto = {
+                "events" : list(EventsViewSet.queryset.values_list()),
+                "username" : request.user.username
+            }
             return render(request,"events.html", contexto)  
         
 
@@ -50,7 +68,17 @@ class UserCreate(viewsets.ModelViewSet):
     
     template_name = "login.html"
     form_class = UserCreationForm
-    #success_url = reverse_lazy("api:events-list")
+
+    def create(self, request,*args,**kwargs):
+        response = super(UserCreate, self).create(request, *args, **kwargs)
+        return HttpResponseRedirect(redirect_to="http://localhost:8080/login/")
+
+class Register(ListView):
+    def get(self,request,*args,**kwargs):
+        if request.user.is_authenticated:
+            return redirect("http://localhost:8080/api/events-all/")
+        else:
+            return render(request, "register.html")    
 
 class Login(FormView):
     template_name = "login.html"
@@ -73,8 +101,7 @@ class Login(FormView):
 
 class Logout(APIView):
     def get(self,request, format=None):
-        request.user.auth_token.delete()
         logout(request)
-        return Response(status = status.HTTP_200_OK)
+        return redirect("login")
 
 
